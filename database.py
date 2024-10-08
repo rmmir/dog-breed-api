@@ -1,28 +1,37 @@
 import sqlite3
-from sqlite3 import Connection
 import stat
 
+from sqlite3 import Connection
 from fastapi import HTTPException
 from models import DogBreedUpdate, DogBreeds, DogBreed
+
 
 def get_dog_breeds(connection: Connection) -> DogBreeds:
     with connection:
         cursor = connection.cursor().execute(
             '''
-            SELECT
-                id,
-                metric_weight,
-                imperial_weight,
-                name,
-                temperament,
-                origin,
-                life_span,
-                reference_image_id
+            SELECT *
             FROM dog_breeds;
             '''
         )
         return DogBreeds( dogBreeds = [DogBreed.model_validate(dict(dog_breed)) for dog_breed in cursor])
 
+
+def get_dog_breed_by_id(connection: Connection, dog_breed_id: str) -> DogBreed:
+    with connection:
+        cursor = connection.cursor().execute(
+            '''
+            SELECT *
+            FROM dog_breeds
+            WHERE id=:dog_breed_id;
+            ''',
+             {"dog_breed_id": dog_breed_id}
+        )
+        row = cursor.fetchone()
+        if row:
+            return DogBreed.model_validate(dict(row))
+        return None
+    
 
 def insert_dog_breed(connection: Connection, dog_breed: DogBreed) -> None:
     fields = {key: value for key, value in dog_breed.__dict__.items() if value is not None}
@@ -43,7 +52,8 @@ def insert_dog_breed(connection: Connection, dog_breed: DogBreed) -> None:
         cursor = connection.cursor()
         cursor.execute(query, fields)
 
-def update_dog_breed(connection: Connection, dog_breed_id: int, dog_breed: DogBreedUpdate) -> None:
+
+def update_dog_breed(connection: Connection, dog_breed_id: str, dog_breed: DogBreedUpdate) -> None:
     fields = {key: value for key, value in dog_breed.__dict__.items() if value is not None}
 
     if not fields:
@@ -64,6 +74,24 @@ def update_dog_breed(connection: Connection, dog_breed_id: int, dog_breed: DogBr
     with connection:
         cursor = connection.cursor()
         cursor.execute(query, fields)
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=stat.HTTP_404_NOT_FOUND,
+                detail="Dog breed not found."
+            )
+
+
+def delete_dog_breed(connection: Connection, dog_breed_id: str) -> None:
+     with connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            '''
+            DELETE FROM dog_breeds
+            WHERE id = :dog_breed_id;
+            ''',
+            {"dog_breed_id": dog_breed_id}
+        )
 
         if cursor.rowcount == 0:
             raise HTTPException(

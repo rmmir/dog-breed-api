@@ -14,15 +14,6 @@ class DogBreed(BaseModel):
 class DogBreeds(BaseModel):
     dogBreeds: List[DogBreed]
 
-class DogBreedAdd(BaseModel):
-    metric_weight: str
-    imperial_weight: str
-    name: str
-    temperament: str
-    origin: str
-    life_span: str
-    reference_image_id: str
-
 class DogBreedUpdate(BaseModel):
     metric_weight: Optional[str] = None
     imperial_weight: Optional[str] = None
