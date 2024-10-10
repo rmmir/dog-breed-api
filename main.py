@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from models import DogBreeds, DogBreed, DogBreedUpdate
+from fastapi.middleware.cors import CORSMiddleware
+from models import DogBreeds, DogBreed, DogBreedUpdate, DogBreedAdd
 from sqlite3 import Connection, Row
 from database import (
     get_dog_breeds, 
@@ -12,6 +13,17 @@ from database import (
 app = FastAPI()
 connection = Connection('dog_breeds.db')
 connection.row_factory = Row
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get('/dog-breeds')
@@ -25,7 +37,7 @@ async def get_by_id(dog_breed_id: str) -> DogBreed:
 
 
 @app.post('/dog-breeds')
-async def add(dog_breed: DogBreed) -> None:
+async def add(dog_breed: DogBreedAdd) -> None:
     insert_dog_breed(connection, dog_breed)
     return None
 
